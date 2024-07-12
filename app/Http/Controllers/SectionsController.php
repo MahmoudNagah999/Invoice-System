@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\sections;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Sections\StoreSectionRequest;
+use App\Http\Requests\Sections\UpdateSectionRequest;
+
 
 class SectionsController extends Controller
 {
@@ -15,7 +17,8 @@ class SectionsController extends Controller
      */
     public function index()
     {
-        return view('sections.sections');
+        $sections = sections::all();
+        return view('sections.sections', compact('sections'));
     }
 
     /**
@@ -34,15 +37,17 @@ class SectionsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreSectionRequest $request)
     {
+        $validatedData = $request->validated([]);
+
         $data = $request->all();
 
-        $exist = sections::where('section_name', '=', $data['section_name'])->exists();
-        if ($exist) {
-            session()->flash('Error', 'هذا القسم موجود مسبقا');
-            return redirect('/sections');
-        } else {
+        // $exist = sections::where('section_name', '=', $data['section_name'])->exists();
+        // if ($exist) {
+        //     session()->flash('Error', 'هذا القسم موجود مسبقا');
+        //     return redirect('/sections');
+        // } else {
             sections::create([
                 'section_name' => $data['section_name'],
                 'description' => $data['description'],
@@ -50,7 +55,7 @@ class SectionsController extends Controller
             ]);
             session()->flash('Add', 'تمت العملية بنجاح');
             return redirect('/sections');
-        }
+        // }
     }
 
     /**
@@ -82,9 +87,19 @@ class SectionsController extends Controller
      * @param  \App\Models\sections  $sections
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, sections $sections)
+    public function update(UpdateSectionRequest $request)
     {
-        //
+        $id = $request->id;
+        $validatedData = $request->validated([]);
+        
+        $section = sections::find($id);
+        $section->update([
+            'section_name' => $request->section_name,
+            'description' => $request->description,
+            'updated_by' => (auth()->user()->name), 
+        ]);
+        session()->flash('Edit', 'Edit Successfully');
+        return redirect('/sections');
     }
 
     /**
@@ -93,8 +108,12 @@ class SectionsController extends Controller
      * @param  \App\Models\sections  $sections
      * @return \Illuminate\Http\Response
      */
-    public function destroy(sections $sections)
+    public function destroy(Request $request)
     {
-        //
+        $id = $request->id;
+        $section = sections::find($id);
+        $section->delete();
+        session()->flash('Delete', 'Delete Successfully');
+        return redirect('/sections');
     }
 }
